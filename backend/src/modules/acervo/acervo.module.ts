@@ -1,0 +1,11 @@
+// src/modules/acervo/acervo.module.ts
+import { Module } from "@nestjs/common";
+import { AcervoController } from "./acervo.controller";
+import { AcervoService } from "./acervo.service";
+
+@Module({
+  controllers: [AcervoController],
+  providers: [AcervoService],
+  exports: [AcervoService],
+})
+export class AcervoModule {}

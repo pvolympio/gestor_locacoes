@@ -1,0 +1,250 @@
+// ============================================================
+// PRISMA SCHEMA — Sistema de Gestão de Locações
+// Modelado com base nas planilhas: Acervo, Locações, Agenda
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USUÁRIOS E AUTENTICAÇÃO
+// ============================================================
+
+model User {
+  id           String   @id @default(uuid())
+  nome         String
+  email        String   @unique
+  senha        String
+  role         UserRole @default(OPERADOR)
+  ativo        Boolean  @default(true)
+  refreshToken String?
+
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+
+  // Auditoria: quem criou/alterou registros
+  locacoesCriadas  Locacao[]  @relation("LocacaoCriadaPor")
+  acervosCriados   Acervo[]   @relation("AcervoCriadoPor")
+  eventosCriados   Evento[]   @relation("EventoCriadoPor")
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  OPERADOR
+}
+
+// ============================================================
+// CLIENTES
+// ============================================================
+
+model Cliente {
+  id        String  @id @default(uuid())
+  nome      String
+  telefone  String?
+  email     String?
+  cpf       String? @unique
+  endereco  String?
+  cidade    String?
+  observacoes String?
+  ativo     Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  locacoes Locacao[]
+
+  @@index([nome])
+  @@index([telefone])
+  @@map("clientes")
+}
+
+// ============================================================
+// CATEGORIAS DO ACERVO
+// ============================================================
+
+model Categoria {
+  id        String  @id @default(uuid())
+  nome      String  @unique
+  descricao String?
+  cor       String? // Cor para identificação visual no dashboard
+
+  criadoEm DateTime @default(now())
+
+  itens Acervo[]
+
+  @@map("categorias")
+}
+
+// ============================================================
+// ACERVO (Estoque de itens para locação)
+// ============================================================
+
+model Acervo {
+  id              String       @id @default(uuid())
+  nome            String
+  descricao       String?
+  categoriaId     String?
+  quantidadeTotal Int          @default(1) // Estoque total do item
+  quantidadeAtual Int          @default(1) // Disponível no momento
+  status          AcervoStatus @default(DISPONIVEL)
+  codigoInterno   String?      @unique // Para controle interno
+  observacoes     String?
+  imagemUrl       String?      // Foto do item
+  valorLocacao    Decimal?     @db.Decimal(10, 2) // Preço por locação (futuro)
+  ativo           Boolean      @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  criadoPorId  String?
+
+  categoria  Categoria? @relation(fields: [categoriaId], references: [id])
+  criadoPor  User?      @relation("AcervoCriadoPor", fields: [criadoPorId], references: [id])
+
+  itensLocacao   ItemLocacao[]
+  historico      HistoricoAcervo[]
+
+  @@index([nome])
+  @@index([categoriaId])
+  @@index([status])
+  @@map("acervo")
+}
+
+enum AcervoStatus {
+  DISPONIVEL    // 100% disponível
+  PARCIALMENTE  // Parte alugada, parte disponível
+  ALUGADO       // Tudo alugado
+  INATIVO       // Fora de uso (quebrado, manutenção etc.)
+}
+
+// ============================================================
+// LOCAÇÕES
+// ============================================================
+
+model Locacao {
+  id              String        @id @default(uuid())
+  clienteId       String
+  dataRetirada    DateTime
+  dataDevolucao   DateTime
+  dataDevolvido   DateTime?     // Data real da devolução
+  status          LocacaoStatus @default(CONFIRMADA)
+  observacoes     String?
+  valorTotal      Decimal?      @db.Decimal(10, 2)
+  desconto        Decimal?      @db.Decimal(10, 2)
+  valorFinal      Decimal?      @db.Decimal(10, 2)
+  formaPagamento  String?
+  pago            Boolean       @default(false)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  criadoPorId  String?
+
+  cliente    Cliente @relation(fields: [clienteId], references: [id])
+  criadoPor  User?   @relation("LocacaoCriadaPor", fields: [criadoPorId], references: [id])
+
+  itens    ItemLocacao[]
+  eventos  Evento[]
+
+  @@index([clienteId])
+  @@index([status])
+  @@index([dataRetirada])
+  @@index([dataDevolucao])
+  // Índice composto para queries de CRON e dashboard (status + vencimento)
+  @@index([status, dataDevolucao])
+  @@map("locacoes")
+}
+
+enum LocacaoStatus {
+  PENDENTE    // Aguardando confirmação
+  CONFIRMADA  // Confirmada, aguardando retirada
+  ATIVA       // Item já foi retirado
+  ATRASADA    // Passou da data de devolução
+  FINALIZADA  // Devolvido com sucesso
+  CANCELADA   // Cancelada
+}
+
+// ============================================================
+// ITENS DA LOCAÇÃO (tabela pivot Locação <-> Acervo)
+// ============================================================
+
+model ItemLocacao {
+  id         String  @id @default(uuid())
+  locacaoId  String
+  acervoId   String
+  quantidade Int     @default(1)
+  observacao String?
+
+  criadoEm DateTime @default(now())
+
+  locacao Locacao @relation(fields: [locacaoId], references: [id], onDelete: Cascade)
+  acervo  Acervo  @relation(fields: [acervoId], references: [id])
+
+  @@unique([locacaoId, acervoId]) // Evita duplicata de item na mesma locação
+  @@index([locacaoId])
+  @@index([acervoId])
+  // Índice composto para a query de verificação de disponibilidade
+  @@index([acervoId, locacaoId])
+  @@map("itens_locacao")
+}
+
+// ============================================================
+// AGENDA / EVENTOS
+// ============================================================
+
+model Evento {
+  id          String      @id @default(uuid())
+  titulo      String
+  descricao   String?
+  dataInicio  DateTime
+  dataFim     DateTime?
+  diaInteiro  Boolean     @default(false)
+  tipo        EventoTipo  @default(OUTRO)
+  cor         String?     // Cor no calendário
+  locacaoId   String?     // Vinculado a uma locação (opcional)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  criadoPorId  String?
+
+  locacao   Locacao? @relation(fields: [locacaoId], references: [id])
+  criadoPor User?    @relation("EventoCriadoPor", fields: [criadoPorId], references: [id])
+
+  @@index([dataInicio])
+  @@index([locacaoId])
+  @@map("eventos")
+}
+
+enum EventoTipo {
+  RETIRADA    // Retirada de item
+  DEVOLUCAO   // Devolução de item
+  RESERVA     // Reserva/bloqueio de datas
+  LEMBRETE    // Lembrete genérico
+  OUTRO
+}
+
+// ============================================================
+// HISTÓRICO DO ACERVO (auditoria de uso)
+// ============================================================
+
+model HistoricoAcervo {
+  id        String  @id @default(uuid())
+  acervoId  String
+  acao      String  // "ALUGADO", "DEVOLVIDO", "QUANTIDADE_ALTERADA", etc.
+  detalhe   String?
+  quantidadeAntes Int?
+  quantidadeDepois Int?
+
+  criadoEm DateTime @default(now())
+
+  acervo Acervo @relation(fields: [acervoId], references: [id])
+
+  @@index([acervoId])
+  @@map("historico_acervo")
+}

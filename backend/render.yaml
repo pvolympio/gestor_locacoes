@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: locacao-system-api
+    env: node
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    # As variáveis sensíveis como DATABASE_URL, JWT_SECRET e CORS_ORIGINS 
+    # deverão ser configuradas manualmente no painel do Render.com

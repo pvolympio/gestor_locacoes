@@ -1,0 +1,365 @@
+{
+  "info": {
+    "name": "Sistema de Locações API",
+    "description": "Coleção completa para testar todos os endpoints da API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000/api/v1" },
+    { "key": "access_token", "value": "" },
+    { "key": "refresh_token", "value": "" },
+    { "key": "cliente_id", "value": "" },
+    { "key": "acervo_id", "value": "" },
+    { "key": "locacao_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.data) {",
+                "  pm.collectionVariables.set('access_token', json.data.accessToken);",
+                "  pm.collectionVariables.set('refresh_token', json.data.refreshToken);",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@sistema.com\",\n  \"senha\": \"admin123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Perfil do usuário",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/auth/perfil",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/logout",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Clientes",
+      "item": [
+        {
+          "name": "Listar clientes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/clientes?page=1&limit=20",
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Criar cliente",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.data) pm.collectionVariables.set('cliente_id', json.data.id);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/clientes",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Fernanda Costa\",\n  \"telefone\": \"(35) 99888-7766\",\n  \"email\": \"fernanda@email.com\",\n  \"cidade\": \"Itajubá\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Buscar cliente por nome (autocomplete)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/clientes/buscar?nome=Fernanda",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Detalhe do cliente",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/clientes/{{cliente_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 Acervo",
+      "item": [
+        {
+          "name": "Listar acervo",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/acervo?page=1&limit=50",
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "50" },
+                { "key": "status", "value": "DISPONIVEL", "disabled": true },
+                { "key": "apenasDisponiveis", "value": "true", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Listar categorias",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/acervo/categorias",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Criar item no acervo",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.data) pm.collectionVariables.set('acervo_id', json.data.id);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/acervo",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Arco Florido Decorativo\",\n  \"descricao\": \"Arco com flores artificiais para decoração\",\n  \"quantidadeTotal\": 2,\n  \"codigoInterno\": \"ARCO-001\",\n  \"observacoes\": \"Guardar em local seco\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verificar disponibilidade",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/acervo/{{acervo_id}}/disponibilidade?dataInicio=2026-04-10&dataFim=2026-04-12&quantidade=1",
+              "query": [
+                { "key": "dataInicio", "value": "2026-04-10" },
+                { "key": "dataFim", "value": "2026-04-12" },
+                { "key": "quantidade", "value": "1" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Locações",
+      "item": [
+        {
+          "name": "Listar locações",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/locacoes?page=1&limit=20",
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "ATIVA", "disabled": true },
+                { "key": "atrasadas", "value": "true", "disabled": true },
+                { "key": "dataInicio", "value": "2026-04-01", "disabled": true },
+                { "key": "dataFim", "value": "2026-04-30", "disabled": true }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Criar locação",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const json = pm.response.json();",
+                "if (json.data) pm.collectionVariables.set('locacao_id', json.data.id);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/locacoes",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": \"{{cliente_id}}\",\n  \"dataRetirada\": \"2026-04-20\",\n  \"dataDevolucao\": \"2026-04-22\",\n  \"itens\": [\n    { \"acervoId\": \"{{acervo_id}}\", \"quantidade\": 1 }\n  ],\n  \"observacoes\": \"Festa de aniversário 15 anos\",\n  \"formaPagamento\": \"Pix\",\n  \"pago\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Detalhe da locação",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/locacoes/{{locacao_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Finalizar locação (devolução)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/locacoes/{{locacao_id}}/finalizar",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"observacoes\": \"Itens devolvidos em perfeito estado\" }"
+            }
+          }
+        },
+        {
+          "name": "Cancelar locação",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/locacoes/{{locacao_id}}/cancelar",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"motivo\": \"Cliente desistiu\" }"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Agenda",
+      "item": [
+        {
+          "name": "Eventos do mês (calendário)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/agenda/mes?ano=2026&mes=4",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Devoluções de hoje",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/agenda/devolucoes-hoje",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Criar evento manual",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/agenda",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Lembrete: verificar estoque\",\n  \"dataInicio\": \"2026-04-15T09:00:00.000Z\",\n  \"tipo\": \"LEMBRETE\",\n  \"cor\": \"#6366f1\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard",
+      "item": [
+        {
+          "name": "Métricas principais",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/dashboard",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Atividades recentes",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/dashboard/atividades?limite=10",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Itens mais alugados",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/dashboard/itens-populares",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Locações atrasadas",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/dashboard/atrasadas",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Disponibilidade em período",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/dashboard/disponibilidade?dataInicio=2026-04-20&dataFim=2026-04-22",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Gráfico mensal (últimos 6 meses)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/dashboard/grafico-mensal?meses=6",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        }
+      ]
+    }
+  ]
+}

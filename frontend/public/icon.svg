@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#a855f7"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.15"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fundo arredondado -->
+  <rect width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+
+  <!-- Brilho superior -->
+  <rect width="512" height="256" rx="112" ry="112" fill="url(#shine)"/>
+
+  <!-- Ícone: Sparkles (faísca) centralizado -->
+  <!-- Estrela central grande -->
+  <path d="M256 136 L270 222 L356 222 L288 272 L314 358 L256 308 L198 358 L224 272 L156 222 L242 222 Z"
+        fill="white" opacity="0.95"/>
+
+  <!-- Estrela pequena superior direita -->
+  <path d="M360 152 L366 178 L392 178 L370 194 L378 220 L360 204 L342 220 L350 194 L328 178 L354 178 Z"
+        fill="white" opacity="0.6" transform="scale(0.55) translate(290, 90)"/>
+
+  <!-- Estrela pequena inferior esquerda -->
+  <path d="M152 320 L157 340 L177 340 L160 352 L167 372 L152 360 L137 372 L144 352 L127 340 L147 340 Z"
+        fill="white" opacity="0.5" transform="scale(0.5) translate(55, 200)"/>
+</svg>
