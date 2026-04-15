@@ -1,6 +1,7 @@
 services:
   - type: web
     name: locacao-system-api
+    plan: free  # Isso força o Render a não pedir cartão
     env: node
     rootDir: backend
     buildCommand: npm install && npx prisma generate && npm run build
