@@ -15,6 +15,7 @@ import { useLocacoesAtrasadas } from '@/hooks/useDashboard'
 const NAV = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/acervo',    icon: Package,          label: 'Acervo'    },
+  { href: '/disponibilidade', icon: CalendarDays,   label: 'Disponibilidade' },
   { href: '/locacoes',  icon: ClipboardList,    label: 'Locações'  },
   { href: '/clientes',  icon: Users,            label: 'Clientes'  },
   { href: '/agenda',    icon: CalendarDays,     label: 'Agenda'    },

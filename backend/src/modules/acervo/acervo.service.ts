@@ -224,6 +224,92 @@ export class AcervoService {
     };
   }
 
+  // ── Calendário de Disponibilidade ────────────────────────
+  async calendarioDisponibilidade(dataInicio: Date, dataFim: Date, categoriaId?: string) {
+    const where: Prisma.AcervoWhereInput = { ativo: true };
+    if (categoriaId) where.categoriaId = categoriaId;
+
+    const itens = await this.prisma.acervo.findMany({
+      where,
+      select: { id: true, nome: true, quantidadeTotal: true, categoria: { select: { cor: true } } },
+      orderBy: [{ categoria: { nome: 'asc' } }, { nome: 'asc' }],
+    });
+
+    const locacoes = await this.prisma.itemLocacao.findMany({
+      where: {
+        locacao: {
+          status: { in: ['CONFIRMADA', 'ATIVA', 'ATRASADA'] },
+          AND: [
+            { dataRetirada: { lte: dataFim } },
+            { dataDevolucao: { gte: dataInicio } },
+          ],
+        },
+      },
+      select: {
+        acervoId: true,
+        quantidade: true,
+        locacao: {
+          select: {
+            id: true,
+            dataRetirada: true,
+            dataDevolucao: true,
+            status: true,
+            cliente: { select: { nome: true } },
+          },
+        },
+      },
+    });
+
+    // Gera os dias entre dataInicio e dataFim
+    const dias = [];
+    let d = new Date(dataInicio);
+    d.setHours(0, 0, 0, 0);
+    const end = new Date(dataFim);
+    end.setHours(0, 0, 0, 0);
+
+    while (d <= end) {
+      dias.push(new Date(d));
+      d.setDate(d.getDate() + 1);
+    }
+
+    const resultado = itens.map(item => {
+      const locacoesDoItem = locacoes.filter(l => l.acervoId === item.id);
+      
+      const disponibilidades = dias.map(dia => {
+        const strDia = dia.toISOString().split('T')[0];
+        
+        const locacoesNesteDia = locacoesDoItem.filter(l => {
+          const ret = new Date(l.locacao.dataRetirada).toISOString().split('T')[0];
+          const dev = new Date(l.locacao.dataDevolucao).toISOString().split('T')[0];
+          return strDia >= ret && strDia <= dev;
+        });
+
+        const emUso = locacoesNesteDia.reduce((s, acc) => s + acc.quantidade, 0);
+        
+        return {
+          data: strDia,
+          disponivel: item.quantidadeTotal - emUso,
+          locacoes: locacoesNesteDia.map(l => ({
+            id: l.locacao.id,
+            cliente: l.locacao.cliente.nome,
+            quantidade: l.quantidade,
+            status: l.locacao.status
+          }))
+        };
+      });
+
+      return {
+        id: item.id,
+        nome: item.nome,
+        quantidadeTotal: item.quantidadeTotal,
+        cor: item.categoria?.cor || '#ccc',
+        doPeriodo: disponibilidades
+      };
+    });
+
+    return resultado;
+  }
+
   // ── Listar categorias ────────────────────────────────────
   async listarCategorias() {
     return this.prisma.categoria.findMany({

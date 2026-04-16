@@ -107,6 +107,26 @@ export class AcervoController {
     );
   }
 
+  @Get("calendario")
+  @ApiOperation({ summary: "Obter matriz de disponibilidade do acervo para um período" })
+  @ApiQuery({ name: "dataInicio", required: true, example: "2026-04-10" })
+  @ApiQuery({ name: "dataFim", required: true, example: "2026-04-17" })
+  @ApiQuery({ name: "categoriaId", required: false })
+  calendarioDisponibilidade(
+    @Query("dataInicio") dataInicio: string,
+    @Query("dataFim") dataFim: string,
+    @Query("categoriaId") categoriaId?: string,
+  ) {
+    if (!dataInicio || !dataFim) {
+      throw new BadRequestException("dataInicio e dataFim são obrigatórios");
+    }
+    return this.acervoService.calendarioDisponibilidade(
+      new Date(dataInicio),
+      new Date(dataFim),
+      categoriaId
+    );
+  }
+
   @Get(":id")
   @ApiOperation({ summary: "Detalhes de um item do acervo com histórico" })
   findOne(@Param("id") id: string) {
