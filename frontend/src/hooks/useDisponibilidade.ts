@@ -27,7 +27,7 @@ export function useCalendarioDisponibilidade(dataInicio: string, dataFim: string
   return useQuery({
     queryKey: ['calendario-disponibilidade', dataInicio, dataFim, categoriaId],
     queryFn: async (): Promise<ItemDisponibilidade[]> => {
-      const { data } = await api.get('/api/v1/acervo/calendario', {
+      const { data } = await api.get('/acervo/calendario', {
         params: { dataInicio, dataFim, categoriaId }
       })
       return data
