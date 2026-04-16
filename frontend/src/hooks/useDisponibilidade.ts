@@ -30,7 +30,7 @@ export function useCalendarioDisponibilidade(dataInicio: string, dataFim: string
       const { data } = await api.get('/acervo/calendario', {
         params: { dataInicio, dataFim, categoriaId }
       })
-      return data
+      return data.data
     },
     enabled: !!dataInicio && !!dataFim,
   })
