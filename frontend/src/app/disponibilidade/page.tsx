@@ -1,6 +1,6 @@
 'use client'
 // src/app/disponibilidade/page.tsx
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Card, Button } from '@/components/ui'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { useCalendarioDisponibilidade } from '@/hooks/useDisponibilidade'
@@ -18,6 +18,9 @@ function getDaysArray(start: Date, end: Date) {
 }
 
 export default function DisponibilidadePage() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   
@@ -71,8 +74,8 @@ export default function DisponibilidadePage() {
   }, [itens, search])
 
   // Formatação para header
-  const strLabelInicio = dataInicio.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
-  const strLabelFim = dataFim.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+  const strLabelInicio = mounted ? dataInicio.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : ''
+  const strLabelFim = mounted ? dataFim.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : ''
 
   return (
     <div className="space-y-5 animate-fade-in flex flex-col h-[calc(100vh-6rem)]">
@@ -150,7 +153,7 @@ export default function DisponibilidadePage() {
 
       <Card className="flex-1 overflow-hidden flex flex-col">
         <div className="overflow-auto flex-1 p-0 custom-scrollbar">
-          {isLoading ? (
+          {!mounted || isLoading ? (
             <div className="p-4 space-y-2">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="flex gap-2 w-full animate-pulse">
